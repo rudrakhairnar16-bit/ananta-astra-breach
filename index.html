@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>ANANTA: ASTRA BREACH — Monster Mash</title>
+<style>
+  :root { --gold:#ffb347; --cyan:#3ee8e0; --red:#ff4a5a; --navy:#2f6f78; --bg:#100e0c; }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; overflow:hidden; background:#07060c; font-family:Georgia,'Iowan Old Style',Palatino,serif; color:#f4efe6; }
+  canvas { display:block; position:fixed; inset:0; }
+  .overlay { position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:10;
+    background:radial-gradient(ellipse at 50% 30%, #1a1612 0%, #100e0c 75%); flex-direction:column; text-align:center; padding:1rem; }
+  .overlay.show { display:flex; }
+  h1 { font-size:clamp(2.4rem,7vw,4.2rem); letter-spacing:.08em; font-weight:700; color:#f6efe2;
+    text-shadow:0 2px 0 #1a1208; }
+  .tag { margin-top:.45rem; color:#c9b89a; letter-spacing:.18em; font-size:.72rem; text-transform:uppercase; }
+  .story { margin-top:1rem; max-width:420px; color:#d9cbb6; font-size:.92rem; line-height:1.45; font-style:normal; }
+  .btn { margin-top:1.4rem; padding:.85rem 2.2rem; font-size:.92rem; font-weight:700; letter-spacing:.14em;
+    color:#1a1208; background:#e7c27a; border:none; border-radius:2px;
+    cursor:pointer; transition:transform .15s ease; }
+  .btn:active { transform:scale(.95); }
+  .btn.alt { background:transparent; color:#c4b49a; border:1px solid #4a3c30; box-shadow:none; }
+  .credit { margin-top:1.8rem; color:#564d7a; font-size:.66rem; letter-spacing:.3em; }
+  /* ===== TITLE / INTRO (E4+E5) ===== */
+  #splash { background: linear-gradient(to bottom, rgba(7,5,16,.18), rgba(10,8,18,.93) 84%), url('assets/cine/title_bg.jpg') center/cover no-repeat #0a0812; }
+  #splash h1 { animation:none; }
+  @keyframes logoPulse { 0%,100%{ filter:drop-shadow(0 0 22px rgba(255,179,71,.32)); } 50%{ filter:drop-shadow(0 0 46px rgba(62,232,224,.55)); } }
+  #cine { background:#000; z-index:26; padding:0; }
+  #cine-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.94; }
+  #cine-img.kb { animation: kb 5.4s ease-out forwards; }
+  @keyframes kb { from{ transform:scale(1.08);} to{ transform:scale(1.0);} }
+  #cine-text { position:absolute; left:50%; bottom:7%; transform:translateX(-50%); width:min(860px,92vw); text-align:center;
+    background:linear-gradient(to top, rgba(5,4,10,.85), rgba(5,4,10,.2)); border-radius:18px; padding:1rem 1.4rem 1.1rem; }
+  #cine-text.fade { animation: tfade .7s ease both; }
+  @keyframes tfade { from{ opacity:0; transform:translate(-50%,12px);} to{ opacity:1; transform:translate(-50%,0);} }
+  #cine-en, #dlg-en { font-size:clamp(1rem,2.6vw,1.45rem); font-weight:800; letter-spacing:.03em; color:#f4eeff; text-shadow:0 2px 14px rgba(0,0,0,.85); }
+  #cine-hi, #dlg-hi { margin-top:.35rem; font-size:clamp(.72rem,1.8vw,.9rem); font-style:italic; color:var(--gold); opacity:.85; }
+  .skipbtn { position:absolute; top:18px; right:18px; z-index:5; padding:.55rem 1.3rem; font-size:.7rem; letter-spacing:.25em;
+    color:#cfc6ee; background:rgba(10,8,18,.6); border:1px solid #4a3c30; border-radius:999px; cursor:pointer; }
+  #dlg { background:rgba(5,4,10,.55); z-index:26; justify-content:flex-end; padding-bottom:6vh; }
+  #dlg-box { display:flex; gap:1.1rem; align-items:center; width:min(760px,94vw); text-align:left;
+    background:rgba(14,10,26,.94); border:1px solid #4a3c30; border-radius:20px; padding:1.1rem 1.3rem; }
+  #dlg-box.fade { animation: dfade .45s ease both; }
+  @keyframes dfade { from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);} }
+  #dlg-port { width:96px; height:96px; border-radius:16px; object-fit:cover; border:2px solid #4a3c30; background:#0a0812; flex-shrink:0; }
+  #dlg-name { font-weight:800; letter-spacing:.2em; font-size:.8rem; margin-bottom:.3rem; }
+  #dlg-next { margin-top:.7rem; color:#8a80b0; font-size:.62rem; letter-spacing:.3em; }
+  /* ===== VFX LAYERS (E6) ===== */
+  #vig { position:fixed; inset:0; pointer-events:none; z-index:4;
+    background:radial-gradient(ellipse at center, transparent 58%, rgba(5,3,12,.55) 100%); }
+  #flash { position:fixed; inset:0; pointer-events:none; z-index:7; opacity:0; mix-blend-mode:screen; }
+  /* ASTRA DRISHTI — world-vision mode */
+  #drishti { position:fixed; inset:0; pointer-events:none; z-index:5; opacity:0; transition:opacity .45s ease;
+    background:radial-gradient(ellipse at center, rgba(62,232,224,.07) 0%, rgba(40,90,170,.16) 62%, rgba(62,232,224,.28) 100%); }
+  #drishti.on { opacity:1; }
+  #rz { position:fixed; inset:0; pointer-events:none; z-index:5; opacity:0;
+    box-shadow: inset 0 0 110px rgba(255,217,138,.55); }
+  #bosscard { position:fixed; inset:0; z-index:24; display:none; background:#000; pointer-events:none; }
+  #bosscard.show { display:block; animation: bcpop 3.5s ease forwards; }
+  #bosscard img { width:100%; height:100%; object-fit:cover; }
+  .bc-text { position:absolute; left:0; right:0; bottom:10%; text-align:center; }
+  .bc-en { font-size:clamp(1.2rem,4vw,2.2rem); font-weight:800; letter-spacing:.18em; color:#ffd98a; text-shadow:0 0 34px rgba(255,179,71,.85); }
+  .bc-hi { margin-top:.45rem; font-style:italic; color:#9adfff; font-size:clamp(.7rem,2vw,.95rem); letter-spacing:.1em; }
+  @keyframes bcpop { 0%{opacity:0;} 9%{opacity:1;} 80%{opacity:1;} 100%{opacity:0;} }
+  #vbar { position:fixed; top:54px; left:50%; transform:translateX(-50%); z-index:5; display:none; gap:.7rem; align-items:center;
+    background:rgba(22,8,34,.85); border:1px solid #8a30ff; border-radius:999px; padding:.42rem 1.3rem; pointer-events:none; }
+  #vbar-name { color:#c080ff; font-size:.7rem; font-weight:800; letter-spacing:.2em; }
+  #vbar-hp { color:#ff4a7a; font-size:.85rem; letter-spacing:.25em; }
+  /* ===== RAKSHAK PARICHAY (voiced hero intro) ===== */
+  #rp { background:#000; z-index:28; padding:0; }
+  #rp-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center 18%;
+    opacity:0; transition: filter .5s ease, opacity .6s ease; }
+  #rp-img.on { opacity:1; }
+  #rp-img.kb2 { animation: kb 7s ease-out forwards; }
+  #rp-q { position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    font-size:clamp(5rem,18vw,11rem); font-weight:900; color:#b89cff; text-shadow:0 0 60px rgba(140,90,255,.9);
+    animation: logoPulse 1.6s ease-in-out infinite; }
+  #rp-name { position:absolute; left:0; right:0; top:34%; text-align:center; display:none;
+    font-size:clamp(3rem,13vw,7.5rem); font-weight:900; letter-spacing:.12em; color:#ffd98a;
+    text-shadow:0 0 34px rgba(255,180,60,.75), 0 4px 30px rgba(0,0,0,.9); }
+  #rp-name.bang { display:block; animation: rpBang .55s cubic-bezier(.17,.89,.32,1.28) both; }
+  @keyframes rpBang { 0%{ transform:scale(3.2); opacity:0; filter:blur(14px);} 60%{ opacity:1; filter:blur(0);} 100%{ transform:scale(1); opacity:1; } }
+  #rp-tag { position:absolute; left:0; right:0; top:28%; text-align:center; display:none;
+    font-size:clamp(.8rem,2.6vw,1.2rem); font-weight:700; letter-spacing:.55em; color:#3ee8e0; }
+  #rp-flash { position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none; }
+  #rp-flash.go { animation: rpFl .5s ease-out both; }
+  @keyframes rpFl { 0%{opacity:.95;} 100%{opacity:0;} }
+  #rp-text { position:absolute; left:50%; bottom:6%; transform:translateX(-50%); width:min(880px,94vw); text-align:center;
+    background:linear-gradient(to top, rgba(5,4,10,.88), rgba(5,4,10,.15)); border-radius:18px; padding:.9rem 1.3rem 1rem; }
+  #rp-text.fade { animation: tfade .6s ease both; }
+  #rp-en { font-size:clamp(.95rem,2.4vw,1.35rem); font-weight:800; color:#f4eeff; text-shadow:0 2px 14px rgba(0,0,0,.85); }
+  #rp-hi { margin-top:.3rem; font-size:clamp(.7rem,1.7vw,.88rem); font-style:italic; color:var(--gold); opacity:.85; }
+  /* ===== POST-CREDITS STINGER ===== */
+  #stg { background:#000; z-index:27; padding:0; }
+  #stg-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.94; }
+  #stg-img.kb { animation: kb 5.4s ease-out forwards; }
+  #stg-text { position:absolute; left:50%; bottom:6%; transform:translateX(-50%); width:min(940px,94vw); text-align:center;
+    background:linear-gradient(to top, rgba(5,4,10,.85), rgba(5,4,10,.2)); border-radius:18px; padding:1rem 1.4rem 1.1rem; }
+  #stg-text.fade { animation: tfade .7s ease both; }
+  #stg-en { font-size:clamp(.92rem,2.3vw,1.32rem); font-weight:800; letter-spacing:.02em; line-height:1.35; color:#f4eeff; text-shadow:0 2px 14px rgba(0,0,0,.85); }
+  #stg-hi { margin-top:.35rem; font-size:clamp(.72rem,1.8vw,.9rem); font-style:italic; color:var(--gold); opacity:.85; }
+  #stg-brand { position:absolute; left:0; right:0; top:11%; text-align:center; display:none;
+    font-size:clamp(1rem,3.4vw,1.9rem); font-weight:800; letter-spacing:.5em; color:var(--gold);
+    text-shadow:0 0 44px rgba(255,179,71,.85); animation: logoPulse 2.4s ease-in-out infinite; }
+  /* HUD */
+  #hud { position:fixed; top:0; left:0; right:0; display:none; justify-content:space-between; align-items:flex-start;
+    padding:12px 14px; z-index:5; pointer-events:none; }
+  .pill { background:rgba(8,7,10,.55); border:none; border-bottom:1px solid rgba(231,194,122,.45); border-radius:0; padding:.28rem .15rem;
+    font-family:system-ui,sans-serif; font-size:.72rem; font-weight:650; letter-spacing:.04em; }
+  #objective { position:fixed; top:14px; left:50%; transform:translateX(-50%); max-width:68vw; text-align:center; z-index:5;
+    background:transparent; border:none; border-radius:0; padding:0;
+    font-size:.78rem; letter-spacing:.04em; color:#f0e2c8; display:none; pointer-events:none; text-shadow:0 1px 2px #000; }
+  /* hero bar */
+  #heroes { position:fixed; bottom:18px; left:50%; transform:translateX(-50%); display:none; gap:.6rem; z-index:6; }
+  .hbtn { width:64px; height:64px; border-radius:16px; border:2px solid #4a3c30; background:rgba(14,10,26,.8);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;
+    transition:all .18s ease; backdrop-filter:blur(8px); overflow:hidden; }
+  .hbtn img { width:44px; height:44px; border-radius:10px; object-fit:cover; pointer-events:none; }
+  .hbtn .hi { font-weight:800; font-size:1.15rem; }
+  .hbtn .hn { font-size:.5rem; letter-spacing:.12em; color:#8a80b0; margin-top:2px; }
+  .hbtn .hk { font-size:.5rem; color:#564d7a; }
+  .hbtn.active { transform:translateY(-6px) scale(1.08); border-width:2.5px; box-shadow:0 10px 26px rgba(0,0,0,.5); }
+  #hint { position:fixed; bottom:96px; left:50%; transform:translateX(-50%); color:#f4efe6; font-size:.92rem;
+    letter-spacing:0; background:rgba(7,6,10,.72); padding:.55rem .9rem; border-radius:2px; border-top:1px solid rgba(231,194,122,.7);
+    display:none; z-index:5; pointer-events:none; text-align:center; max-width:34rem; font-family:Georgia,serif; }
+  #stick { position:fixed; left:20px; bottom:96px; width:110px; height:110px; border-radius:50%;
+    border:2px solid rgba(255,179,71,.3); display:none; z-index:6; }
+  #knob { position:absolute; left:35px; top:35px; width:40px; height:40px; border-radius:50%; background:rgba(255,179,71,.4); }
+  #actbtn { position:fixed; right:20px; bottom:106px; width:84px; height:84px; border-radius:50%; display:none; z-index:6;
+    background:rgba(255,179,71,.16); border:2px solid var(--gold); color:var(--gold); font-weight:800; letter-spacing:.1em; font-size:.76rem; }
+  .card { background:rgba(16,12,30,.92); border:1px solid #2c2448; border-radius:22px; padding:1.6rem 2rem; max-width:min(440px,92vw); }
+  .big { font-size:1.7rem; font-weight:800; color:var(--gold); letter-spacing:.1em; }
+  .sub { color:#c4b49a; font-size:.75rem; letter-spacing:.14em; margin-top:.4rem; line-height:1.8; }
+</style>
+</head>
+<body>
+
+<div id="boot" class="overlay show" style="z-index:40; background:#070510; opacity:1; transition:opacity .8s ease;">
+  <div style="font-size:.66rem; letter-spacing:.5em; color:#6a5f92;">AN ANANTA IP ORIGINAL</div>
+  <div style="margin-top:.9rem; font-size:1.15rem; letter-spacing:.32em; color:var(--gold); font-weight:800;">RUDRA KHAIRE <span style="color:#c4b49a; font-weight:400;">PRESENTS</span></div>
+</div>
+
+<div id="splash" class="overlay show">
+  <h1>ANANTA</h1>
+  <div class="tag">Astra Breach · Monster Mash</div>
+  <div id="bestrec" style="margin-top:.55rem; color:#ffd98a; font-size:.74rem; letter-spacing:.2em; display:none;"></div>
+  <div class="story" id="story">Neo-Varanasi, 2042. Three hybrids are loose on the ghats. Do not kill them. Calm them.</div>
+  <button class="btn" id="b-start" disabled>LOADING NEO-VARANASI…</button>
+  <button class="btn" id="b-tut" disabled style="font-size:.74rem; margin-top:.55rem; background:rgba(62,232,224,.1); border-color:var(--cyan); color:var(--cyan);">TUTORIAL — LADNA SEEKHO</button>
+  <button class="btn alt" id="b-rp" style="font-size:.7rem; margin-top:.5rem; border-color:var(--gold); color:var(--gold); background:rgba(255,180,60,.08);">🎙 RAKSHAK PARICHAY</button>
+  <button class="btn alt" id="b-lang" style="font-size:.68rem; margin-top:.5rem;">🌐 LANGUAGE: ENGLISH</button>
+  <div class="credit">MADE BY RUDRA KHAIRE</div>
+</div>
+
+<div id="results" class="overlay">
+  <div class="card">
+    <div class="big" id="res-title">BREACH POINT SECURED</div>
+    <div class="sub" id="res-sub"></div>
+    <div class="sub" id="res-stats" style="color:var(--cyan)"></div>
+    <button class="btn" id="b-again" style="font-size:.85rem;">RUN AGAIN</button>
+  </div>
+</div>
+
+<div id="cine" class="overlay">
+  <img id="cine-img" alt="">
+  <div id="cine-text"><div id="cine-en"></div><div id="cine-hi"></div></div>
+  <button class="skipbtn" id="cine-skip">SKIP ▸</button>
+</div>
+
+<div id="dlg" class="overlay">
+  <div id="dlg-box">
+    <img id="dlg-port" alt="">
+    <div style="flex:1;"><div id="dlg-name"></div><div id="dlg-en"></div><div id="dlg-hi"></div></div>
+  </div>
+  <div id="dlg-next">SPACE / TAP — NEXT · ESC = SKIP</div>
+  <button class="skipbtn" id="dlg-skip">SKIP ▸</button>
+</div>
+
+<div id="rp" class="overlay">
+  <img id="rp-img" alt="">
+  <div id="rp-q">?</div>
+  <div id="rp-tag"></div>
+  <div id="rp-name"></div>
+  <div id="rp-text"><div id="rp-en"></div><div id="rp-hi"></div></div>
+  <div id="rp-flash"></div>
+  <button class="skipbtn" id="rp-skip">SKIP ▸</button>
+</div>
+
+<div id="stg" class="overlay">
+  <img id="stg-img" alt="">
+  <div id="stg-brand">ANANTA WILL RETURN</div>
+  <div id="stg-text"><div id="stg-en"></div><div id="stg-hi"></div></div>
+  <button class="skipbtn" id="stg-skip">SKIP ▸</button>
+</div>
+
+<div id="vig"></div>
+<div id="drishti"></div>
+<div id="rz"></div>
+<div id="flash"></div>
+<div id="vbar"><span id="vbar-name"></span><span id="vbar-hp"></span></div>
+<div id="bosscard">
+  <img src="assets/cine/boss_intro.jpg" alt="">
+  <div class="bc-text">
+    <div class="bc-en">THE DROWNED GUARDIAN WAKES</div>
+    <div class="bc-hi">Dooba hua rakshak jaag utha — READ · COUNTER · BREAK</div>
+  </div>
+</div>
+
+<div id="hud">
+  <span class="pill" id="sparks" style="color:#f4c9d4">✿ 0 / 3</span>
+  <span class="pill" id="patterns" style="color:#9adfff">◈ 0 / 3</span>
+  <span class="pill" id="stab" style="color:#7dffb0">STABILITY 100%</span>
+  <span class="pill" id="abilcd" style="color:var(--cyan)">READY</span>
+</div>
+<div id="objective"></div>
+<div id="hint"></div>
+<div id="heroes"></div>
+<div id="stick"><div id="knob"></div></div>
+<button id="actbtn">ASTRA</button>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
